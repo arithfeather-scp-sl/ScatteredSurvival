@@ -19,14 +19,15 @@ namespace ArithFeather.ScatteredSurvival
 		name = "Scattered Survival",
 		description = "",
 		id = "ArithFeather.ScatteredSurvival",
-		configPrefix = "ss",
-		version = "1.0",
+		configPrefix = "afss",
+		version = "1.02",
 		SmodMajor = 3,
 		SmodMinor = 4,
 		SmodRevision = 0
 		)]
 	public class ScatteredSurvival : Plugin
 	{
+		[ConfigOption] private readonly bool disablePlugin = false;
 		/// <summary>
 		/// Displays all the info
 		/// </summary>
@@ -155,7 +156,7 @@ namespace ArithFeather.ScatteredSurvival
 
 			var com = new SpawningCommands(this);
 			AddEventHandlers(com);
-			AddCommand("ss", com);
+			AddCommand("afss", com);
 		}
 
 		public void PlayerJoin(PlayerJoinEvent ev)
@@ -165,7 +166,7 @@ namespace ArithFeather.ScatteredSurvival
 				try
 				{
 					PersonalBroadcast(ev.Player, 8,
-						"Welcome to Scattered Survival v1.0! Press ` to open the console and enter '.help' for mod information!");
+						"Welcome to Scattered Survival v1.02! Press ` to open the console and enter '.help' for mod information!");
 					//PersonalBroadcast(ev.Player, 8,
 					//	"If you like the plugin, join the discord for updates!\n" +
 					//	"https://discord.gg/DunUU82");
@@ -207,6 +208,12 @@ namespace ArithFeather.ScatteredSurvival
 		/// </summary>
 		public void ResetRound()
 		{
+			if (disablePlugin)
+			{
+				PluginManager.DisablePlugin(this);
+				return;
+			}
+
 			playerDeathCounter = 0;
 			GeneratorCounter = 0;
 			cachedBroadcast = GameObject.Find("Host").GetComponent<Broadcast>();
