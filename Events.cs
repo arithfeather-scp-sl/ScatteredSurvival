@@ -1,4 +1,5 @@
-﻿using Smod2.EventHandlers;
+﻿using Smod2.API;
+using Smod2.EventHandlers;
 using Smod2.Events;
 using Smod2.EventSystem.Events;
 
@@ -9,7 +10,7 @@ namespace ArithFeather.ScatteredSurvival
         IEventHandler079AddExp, IEventHandlerTeamRespawn, IEventHandlerPlayerJoin, IEventHandlerInitialAssignTeam,
         IEventHandlerGeneratorFinish, IEventHandlerCheckEscape, IEventHandlerWarheadDetonate,
         IEventHandlerDecideTeamRespawnQueue, IEventHandlerDisconnect, IEventHandlerRecallZombie,
-		IEventHandlerContain106
+		IEventHandlerContain106, IEventHandlerPlayerHurt
 
     {
         private ScatteredSurvival plugin;
@@ -32,9 +33,17 @@ namespace ArithFeather.ScatteredSurvival
         public void OnDecideTeamRespawnQueue(DecideRespawnQueueEvent ev) => plugin.BeforeSpawn();
         public void OnDisconnect(DisconnectEvent ev) => plugin.CheckNotEnoughPlayers();
         public void OnRecallZombie(PlayerRecallZombieEvent ev) => plugin.Zombie(ev);
-        public void OnContain106(PlayerContain106Event ev) => plugin.Contain106(ev);
+		public void OnContain106(PlayerContain106Event ev) => plugin.Contain106(ev);
+		public void OnPlayerHurt(PlayerHurtEvent ev)
+		{
+			if (ev.Player.TeamRole.Role == Role.SCP_106 && ev.DamageType == DamageType.CONTAIN) ev.Damage = 0;
+		}
+
 		/// <summary>
 		/// Changing Config values.
+		/// Team Respawn Queue 34034304343403434034
+		/// Friendly Fire true
+		/// 
 		/// </summary>
 		public void OnSetConfig(SetConfigEvent ev)
         {
@@ -47,7 +56,7 @@ namespace ArithFeather.ScatteredSurvival
                     ev.Value = true;
 					break;
 				case "team_respawn_queue":
-					ev.Value = "34034304343403434034";
+					if (plugin.useDefaultConfig) ev.Value = "34034304343403434034";
 					break;
 				case "maximum_MTF_respawn_amount":
 					ev.Value = 100;
@@ -55,30 +64,15 @@ namespace ArithFeather.ScatteredSurvival
                 case "smart_class_picker":
                     ev.Value = false;
                     break;
-                case "friendly_fire":
-                    ev.Value = true;
-                    break;
                 case "disable_dropping_empty_boxes":
                     ev.Value = true;
-                    break;
-                case "enable_broadcast_logging":
-                    ev.Value = false;
                     break;
 
                 case "disable_decontamination":
                     ev.Value = true;
                     break;
-                case "scp173_max_looking_distance":
-                    ev.Value = 100;
-                    break;
                 case "cassie_respawn_announcements":
                     ev.Value = false;
-                    break;
-                case "minimum_MTF_time_to_spawn":
-                    ev.Value = 30;
-                    break;
-                case "maximum_MTF_time_to_spawn":
-                    ev.Value = 30;
                     break;
 
                 case "antifly_enable":
@@ -92,17 +86,14 @@ namespace ArithFeather.ScatteredSurvival
                     ev.Value = true;
                     break;
 
-                // Class Editing
-                case "default_item_scientist":
-                    ev.Value = new[] { 19 };
-                    break;
-                case "default_item_classd":
-                    ev.Value = new[] { 19 };
-                    break;
-                case "default_item_ci":
-                    ev.Value = new[] { 10, 12, 14, 13, 25, 19, 24 };
-                    break;
-            }
+				// Class Editing
+				case "default_item_scientist":
+					if (plugin.useDefaultConfig) ev.Value = new[] { 19 };
+					break;
+				case "default_item_ci":
+					if (plugin.useDefaultConfig) ev.Value = new[] { 10, 12, 14, 13, 25, 19, 24 };
+					break;
+			}
         }
     }
 }

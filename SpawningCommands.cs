@@ -107,12 +107,11 @@ namespace ArithFeather.ScatteredSurvival
 		{
 			if (ev.Command == "help")
 			{
-				ev.ReturnMessage = "Scattered Survival Mode v1.00\n" +
+				ev.ReturnMessage = $"Scattered Survival Mode v{ScatteredSurvival.ModVersion}\n" +
 				                   "https://discord.gg/DunUU82\n" +
-				                   "Scientists and ClassD are working together to defeat the SCP and Chaos.\n" +
-				                   "They will spawn randomly in Entrance and Light Containment Zone.\n" +
+				                   "Scientists will spawn randomly in Entrance and Light Containment Zone.\n" +
 				                   "\n" +
-				                   "SCP win if the player's lives reach 0. Lives are shared between class D and Scientists.\n" +
+				                   "SCP win if the player's lives reach 0. Lives are shared between everyone.\n" +
 				                   "\n" +
 				                   "There is a chance for Chaos to spawn.\n" +
 				                   "They automatically win if they set off the nuke. Stop them.\n" +
@@ -123,7 +122,7 @@ namespace ArithFeather.ScatteredSurvival
 								   "SCP106 pelvis breaker no longer kills 106. Instead, it reduces their current HP by half.\n" +
 				                   "--Rules--\n" +
 				                   "1. Friendly fire is on, please don't shoot your teammates on purpose.\n" +
-				                   "Teams are: 1 - Scientists and Class D. 2 - SCP. 3 - Chaos Insurgency\n" +
+				                   "Teams are: 1 - Scientists. 2 - SCP. 3 - Chaos Insurgency\n" +
 				                   "2.Please don't group up with other teams.\n" +
 				                   "3.Don't harass other players. Instant ban\n" +
 				                   "4.Players found cheating will be recorded and reported for global ban.";

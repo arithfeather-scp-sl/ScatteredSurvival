@@ -20,13 +20,26 @@ namespace ArithFeather.ScatteredSurvival
 		description = "",
 		id = "ArithFeather.ScatteredSurvival",
 		configPrefix = "afss",
-		version = "1.02",
+		version = ModVersion,
 		SmodMajor = 3,
 		SmodMinor = 4,
 		SmodRevision = 0
 		)]
 	public class ScatteredSurvival : Plugin
 	{
+		public const string ModVersion = "1.03";
+		
+		private const string ServerHighLightColor = "#38a8b5";
+
+		private const string ServerInfoColor = "#23eb44";
+		private const int ServerInfoSize = 50;
+
+		private const string ClassInfoColor = "#23eb44";
+		private const int ClassInfoSize = 50;
+
+		private const string WinColor = "#b81111";
+		private const int WinTextSize = 70;
+
 		[ConfigOption] private readonly bool disablePlugin = false;
 		/// <summary>
 		/// Displays all the info
@@ -42,6 +55,7 @@ namespace ArithFeather.ScatteredSurvival
 		[ConfigOption] private readonly int scpSpawnTime = 10;
 
 		[ConfigOption] private readonly bool showGameStartMessage = true;
+		[ConfigOption] public readonly bool useDefaultConfig = true;
 
 		private const string ItemSpawnDataFileLocation = "sm_plugins/ItemSpawnPointData.txt";
 		private const string PlayerSpawnDataFileLocation = "sm_plugins/PlayerSpawnPointData.txt";
@@ -84,13 +98,13 @@ namespace ArithFeather.ScatteredSurvival
 
 		private class SavedSpawnData
 		{
-			public readonly string Name;
+			public readonly int ID;
 			public readonly Vector SpawnLocation;
 			public readonly Role Role;
 
-			public SavedSpawnData(string name, Vector spawnLocation, Role role)
+			public SavedSpawnData(int id, Vector spawnLocation, Role role)
 			{
-				Name = name;
+				ID = id;
 				SpawnLocation = spawnLocation;
 				Role = role;
 			}
@@ -109,6 +123,7 @@ namespace ArithFeather.ScatteredSurvival
 		private int maxAmountOfLives;
 
 		private bool isRoundStarted;
+		private bool femurBroke;
 
 		private bool triggerEnding;
 		private float endingTriggerTimer;
@@ -165,20 +180,10 @@ namespace ArithFeather.ScatteredSurvival
 			{
 				try
 				{
-					PersonalBroadcast(ev.Player, 8,
-						"Welcome to Scattered Survival v1.02! Press ` to open the console and enter '.help' for mod information!");
-					//PersonalBroadcast(ev.Player, 8,
-					//	"If you like the plugin, join the discord for updates!\n" +
-					//	"https://discord.gg/DunUU82");
-					PersonalBroadcast(ev.Player, 7,
-						"1. Friendly fire is on, please don't shoot your teammates on purpose.\n" +
-						"Teams are: 1 - Scientists and Class D | 2 - SCP | 3 - Chaos Insurgency.");
-					PersonalBroadcast(ev.Player, 3,
-						"2. Please don't group up with other teams.");
-					PersonalBroadcast(ev.Player, 3,
-						"3. Don't harass other players. Instant ban.");
-					PersonalBroadcast(ev.Player, 3,
-						"4. Players found cheating will be recorded and reported for global ban.");
+					PersonalBroadcast(ev.Player, 10,
+						$"<size={ServerInfoSize}><color={ServerInfoColor}>Welcome to <color={ServerHighLightColor}>Scattered Survival v{ModVersion}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.help</color>' for mod information!</color></size>");
+					//PersonalBroadcast(ev.Player, 10,
+					//	$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
 				}
 				catch
 				{
@@ -220,6 +225,7 @@ namespace ArithFeather.ScatteredSurvival
 			cachedChaosSpawn = Server.Map.GetSpawnPoints(Role.CHAOS_INSURGENCY)[0];
 			spawnedChaos = disableChaosSpawns ? int.MaxValue : spawnsUntilChaos - 1;
 			scpSpawnTimer = scpSpawnTime;
+			femurBroke = false;
 			DeadSCP.Clear();
 			SpawnGroup.Clear();
 			ScpPlayers.Clear();
@@ -354,7 +360,7 @@ namespace ArithFeather.ScatteredSurvival
 			var team = ev.Team;
 
 #if EDITOR_MODE
-			Info($"Game assigned {player.Name} to spawn as {team}");
+			Info($"Game assigned {player.ID} to spawn as {team}");
 #endif
 
 			if (team != Smod2.API.Team.SCP)
@@ -369,10 +375,9 @@ namespace ArithFeather.ScatteredSurvival
 					{
 						spawnedChaos = 0;
 						ev.Team = Smod2.API.Team.CHAOS_INSURGENCY;
-						SpawnGroup.Add(new SavedSpawnData(player.Name, cachedChaosSpawn, Role.CHAOS_INSURGENCY));
-
+						SpawnGroup.Add(new SavedSpawnData(player.PlayerId, cachedChaosSpawn, Role.CHAOS_INSURGENCY));
 #if EDITOR_MODE
-						Info($"Plugin assigned {player.Name} to spawn as Chaos Insurgency");
+						Info($"Plugin assigned {player.ID} to spawn as Chaos Insurgency");
 #endif
 					}
 					else
@@ -380,10 +385,10 @@ namespace ArithFeather.ScatteredSurvival
 						// Assign spawn points.
 						int randomN = Random.Range(0, cachedFreeRoom.Count);
 						var point = cachedFreeRoom[randomN];
-						var role = Random.Range(0f, 1f) > 0.5f ? Role.SCIENTIST : Role.CLASSD;
-						SpawnGroup.Add(new SavedSpawnData(player.Name, point.Position, role));
+						cachedFreeRoom.RemoveAt(randomN);
+						SpawnGroup.Add(new SavedSpawnData(player.PlayerId, point.Position, Role.SCIENTIST));
 #if EDITOR_MODE
-						Info($"Plugin assigned {player.Name} to spawn as {role}");
+						Info($"Plugin assigned {player.ID} to spawn as {role}");
 #endif
 					}
 				}
@@ -427,21 +432,17 @@ namespace ArithFeather.ScatteredSurvival
 				if (p.TeamRole.Team == Smod2.API.Team.SCP)
 				{
 					ScpPlayers.Add(new ScpPlayer(p.Name));
-					PersonalBroadcast(p, (uint)messageRefreshTime,
-						$"Kill the players {(maxAmountOfLives - playerDeathCounter)} times to win.\nStop the Chaos from setting off the nuke.");
+					PersonalBroadcast(p, 10,
+						$"<size={ClassInfoSize}><color={ClassInfoColor}>Kill the players <color={WinColor}>{(maxAmountOfLives - playerDeathCounter)}</color> times to win.</color></size>");
 				}
 				// Send broadcast for roles.
 				else if (p.TeamRole.Role == Role.SCIENTIST)
 				{
-					PersonalBroadcast(p, (uint)messageRefreshTime, "Work together with Class D to stop the chaos from setting off the nuke and kill the SCP before your lives reach 0. Lives are shared.");
-				}
-				else if (p.TeamRole.Role == Role.CLASSD)
-				{
-					PersonalBroadcast(p, (uint)messageRefreshTime, "Work together with Scientists to stop the chaos from setting off the nuke and kill the SCP before your lives reach 0. Lives are shared.");
+					PersonalBroadcast(p, 10, $"<size={ClassInfoSize}><color={ClassInfoColor}>Kill the SCP before your lives reach 0. Lives are shared.</color></size>");
 				}
 				else if (p.TeamRole.Role == Role.CHAOS_INSURGENCY)
 				{
-					PersonalBroadcast(p, (uint)messageRefreshTime, "Everyone is your enemy. Set off the nuke to win.");
+					PersonalBroadcast(p, 10, $"<size={ClassInfoSize}><color={ClassInfoColor}>Set off the nuke to win before lives reach 0. Everyone is your enemy.</color></size>");
 				}
 			}
 
@@ -552,25 +553,24 @@ namespace ArithFeather.ScatteredSurvival
 				if (spawnedChaos == spawnsUntilChaos)
 				{
 					spawnedChaos = 0;
-					SpawnGroup.Add(new SavedSpawnData(spawningPlayer.Name, cachedChaosSpawn,
+					SpawnGroup.Add(new SavedSpawnData(spawningPlayer.PlayerId, cachedChaosSpawn,
 						Role.CHAOS_INSURGENCY));
 
 #if EDITOR_MODE
-					Info($"Plugin assigned {spawningPlayer.Name} to spawn as Chaos Insurgency");
+					Info($"Plugin assigned {spawningPlayer.ID} to spawn as Chaos Insurgency");
 #endif
 				}
 				else
 				{
 					int randomN = Random.Range(0, cachedFreeRoom.Count);
 					var point = cachedFreeRoom[randomN];
-					var role = Random.Range(0f, 1f) > 0.5f ? Role.SCIENTIST : Role.CLASSD;
 
-					SpawnGroup.Add(new SavedSpawnData(spawningPlayer.Name, point.Position, role));
+					SpawnGroup.Add(new SavedSpawnData(spawningPlayer.PlayerId, point.Position, Role.SCIENTIST));
 
 					cachedFreeRoom.RemoveAt(randomN);
 
 #if EDITOR_MODE
-					Info($"Adding {spawningPlayer.Name} as {role}");
+					Info($"Adding {spawningPlayer.ID} as {role}");
 #endif
 
 					if (point.ZoneType == ZoneType.ENTRANCE)
@@ -604,25 +604,25 @@ namespace ArithFeather.ScatteredSurvival
 		{
 			if (triggerEnding) return;
 			var player = ev.Player;
-			var playerName = player.Name;
+			var playerId = player.PlayerId;
 
 			var spawnCount = SpawnGroup.Count;
 			for (var i = 0; i < spawnCount; i++)
 			{
 				var p = SpawnGroup[i];
 
-				if (p.Name != playerName) continue;
+				if (p.ID != playerId) continue;
 
 				ev.SpawnPos = p.SpawnLocation;
 
 #if EDITOR_MODE
-				Info($"Spawning: Found match for {player.Name}");
+				Info($"Spawning: Found match for {player.ID}");
 #endif
 				return;
 			}
 
 #if EDITOR_MODE
-			Info($"Spawning: No match found for {player.Name}");
+			Info($"Spawning: No match found for {player.ID}");
 #endif
 		}
 
@@ -662,27 +662,46 @@ namespace ArithFeather.ScatteredSurvival
 				if (!(messageTimer >= messageRefreshTime)) return;
 
 				messageTimer = 0;
-				Broadcast((uint)messageTime, $"Lives left: {maxAmountOfLives - playerDeathCounter}");
+				Broadcast((uint)messageTime, $"Lives left: <color={WinColor}>{maxAmountOfLives - playerDeathCounter}</color>");
 			}
 		}
 
 		public void SetRole(PlayerSetRoleEvent ev)
 		{
-			if (triggerEnding) return;
+			if (triggerEnding)
+			{
+				ev.Role = Role.SPECTATOR;
+				return;
+			}
 
-			var playerName = ev.Player.Name;
+			var playerId = ev.Player.PlayerId;
 
 			var spawnCount = SpawnGroup.Count;
 			for (var i = 0; i < spawnCount; i++)
 			{
 				var p = SpawnGroup[i];
 
-				if (p.Name != playerName) continue;
+				if (p.ID != playerId) continue;
 
 				ev.Role = p.Role;
 #if EDITOR_MODE
-				Info($"Setting {ev.Player.Name}'s role to {p.Role}");
+				Info($"Setting {ev.Player.ID}'s role to {p.Role}");
 #endif
+
+				if (p.Role == Role.CHAOS_INSURGENCY)
+				{
+					var players = Server.GetPlayers();
+					var playerCount = players.Count;
+					for (int j = 0; j < playerCount; j++)
+					{
+						var player = players[j];
+						if (player.TeamRole.Team == Smod2.API.Team.CHAOS_INSURGENCY && player.PlayerId != ev.Player.PlayerId)
+						{
+							PersonalBroadcast(player, 5, "<color=#0c9126>Chaos Insurgency have spawned to aid you!");
+						}
+					}
+				}
+
 				return;
 			}
 		}
@@ -693,7 +712,7 @@ namespace ArithFeather.ScatteredSurvival
 		public void PlayerDied(PlayerDeathEvent ev)
 		{
 #if EDITOR_MODE
-			Info($"{ev.Player.Name} died.");
+			Info($"{ev.Player.ID} died.");
 #endif
 			var player = ev.Player;
 
@@ -701,7 +720,7 @@ namespace ArithFeather.ScatteredSurvival
 			var length = SpawnGroup.Count;
 			for (var i = 0; i < length; i++)
 			{
-				if (SpawnGroup[i].Name != player.Name) continue;
+				if (SpawnGroup[i].ID != player.PlayerId) continue;
 
 				SpawnGroup.RemoveAt(i);
 				break;
@@ -722,14 +741,13 @@ namespace ArithFeather.ScatteredSurvival
 						// Check SCP win
 						if (!triggerEnding && playerDeathCounter >= maxAmountOfLives)
 						{
-							TriggerEnding("Players ran out of lives!\n" +
-								"SCP Win!");
+							TriggerEnding($"<size={WinTextSize}><color={WinColor}>SCP Win!</color></size>\n Players ran out of lives.");
 							return;
 						}
 
 						messageTimer = 0;
 						ClearBroadcasts();
-						Broadcast((uint)messageTime, $"Lives left: {maxAmountOfLives - playerDeathCounter}");
+						Broadcast((uint)messageTime, $"Lives left: <color={WinColor}>{maxAmountOfLives - playerDeathCounter}</color>");
 					}
 
 					if (!isRoundStarted) return;
@@ -754,7 +772,7 @@ namespace ArithFeather.ScatteredSurvival
 							scpSpawnTimer = 0;
 
 #if EDITOR_MODE
-							Info($"Settings {scp.Name} to dead");
+							Info($"Settings {scp.ID} to dead");
 #endif
 						}
 						else if (!scp.IsDead)
@@ -765,8 +783,7 @@ namespace ArithFeather.ScatteredSurvival
 
 					if (aliveScPs > 0) return;
 
-					TriggerEnding("All SCP have been contained!\n" +
-								  "Scientists & Class D Win!");
+					TriggerEnding($"<size={WinTextSize}><color={WinColor}>Scientists Win!</color></size>\n All SCP have been contained");
 				}
 			}
 		}
@@ -774,25 +791,28 @@ namespace ArithFeather.ScatteredSurvival
 		/// <summary>
 		/// Instead of killing him instantly, damage him for half his current HP
 		/// </summary>
-		/// <param name="ev"></param>
 		public void Contain106(PlayerContain106Event ev)
 		{
-			ev.ActivateContainment = false;
-			var scp106S = ev.SCP106s;
+			//if (!femurBroke)
+			//{
+			femurBroke = true;
 
-			foreach (var one06 in scp106S)
+			var scps = Server.GetPlayers(Role.SCP_106);
+			var scpCount = scps.Count;
+
+			for (int i = 0; i < scpCount; i++)
 			{
-				var hp = one06.GetHealth();
-				one06.SetHealth(hp / 2, DamageType.CONTAIN);
+				var scp = scps[i];
+				scp.Damage((int) (scp.GetHealth() / 2), DamageType.NONE);
 			}
 
-			Broadcast(5, "SCP 106 has been damaged for half their current HP!");
+			Broadcast(5, $"<color={WinColor}>SCP 106 has been damaged for half their current HP!</color>");
 		}
 
 		/// <summary>
 		/// Called when nuke goes off
 		/// </summary>
-		public void Boom() => TriggerEnding("Chaos has set off the bomb!\n" + "Chaos Insurgency Wins!");
+		public void Boom() => TriggerEnding($"<size={WinTextSize}><color={WinColor}>Chaos Insurgency Wins!</color></size>\n They set off the nuke.");
 
 		/// <summary>
 		/// Check for zombie end
@@ -814,8 +834,8 @@ namespace ArithFeather.ScatteredSurvival
 
 			if (scpCounter == playerCount)
 			{
-				TriggerEnding("All players were converted to SCP!\n" +
-							  "SCP Wins");
+				TriggerEnding(
+					$"<size={WinTextSize}><color={WinColor}>SCP Wins!</color></size>\n All players were converted to SCP!");
 			}
 		}
 
@@ -924,7 +944,7 @@ namespace ArithFeather.ScatteredSurvival
 
 			cachedBroadcast.CallTargetAddElement(connection, message, duration, false);
 #if EDITOR_MODE
-			ServerConsole.AddLog($"Broadcasted: {message} to: {player.Name}");
+			ServerConsole.AddLog($"Broadcasted: {message} to: {player.ID}");
 #endif
 		}
 		private void ClearBroadcasts() => cachedBroadcast.CallRpcClearElements();
