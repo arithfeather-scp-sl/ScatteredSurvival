@@ -31,9 +31,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ArithSpawningKit, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ArithSpawningKit\obj\Debug\ArithSpawningKit.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Packages\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PlayerLives">
+      <HintPath>..\PlayerLives\obj\Debug\PlayerLives.dll</HintPath>
+    </Reference>
+    <Reference Include="RandomItemSpawner">
+      <HintPath>..\RandomItemSpawner\obj\Debug\RandomItemSpawner.dll</HintPath>
     </Reference>
     <Reference Include="Smod2, Version=3.4.1.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -61,14 +71,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ItemRoomData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScatteredSurvival.cs" />
-    <Compile Include="Events.cs" />
-    <Compile Include="SpawningCommands.cs" />
-    <Compile Include="SpawnDataIO.cs" />
-    <Compile Include="SpawnPointDataStructs.cs" />
-    <Compile Include="Tools.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
