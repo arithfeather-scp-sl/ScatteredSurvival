@@ -31,7 +31,7 @@ namespace ArithFeather.ScatteredSurvival
 		IEventHandlerCheckEscape, IEventHandlerRoundStart, IEventHandlerCallCommand, IEventHandler079AddExp,
 		IEventHandlerGeneratorFinish, IEventHandlerWarheadChangeLever, IEventHandlerPlayerDie
 	{
-		public const string ModVersion = "1.04";
+		public const string ModVersion = "1.1";
 
 		#region Const text values
 
@@ -53,9 +53,6 @@ namespace ArithFeather.ScatteredSurvival
 		[ConfigOption] public readonly bool useDefaultConfig = true;
 		[ConfigOption] private readonly float expMultiplier = 10;
 
-		// Item Spawning addition
-		[ConfigOption] private readonly int[] onSpawnItems = new int[] { 0, 4, 9 };
-
 		private readonly FieldInfo cachedPlayerConnFieldInfo = typeof(SmodPlayer).GetField("conn", BindingFlags.NonPublic | BindingFlags.Instance);
 
 		//+ Round Data
@@ -63,7 +60,6 @@ namespace ArithFeather.ScatteredSurvival
 		private bool femurBroke;
 		private int generatorsActivated;
 		private bool roundStarted;
-		private bool endGame;
 		private Broadcast cachedBroadcast;
 
 		// Plugin Methods
@@ -74,9 +70,9 @@ namespace ArithFeather.ScatteredSurvival
 		{
 			AddEventHandlers(this, Priority.Lowest);
 
-			ArithSpawningKit.RandomPlayerSpawning.RandomPlayerSpawning.Instance.DisablePlugin = false;
+			RandomPlayerSpawning.Instance.DisablePlugin = false;
 
-			var individualSpawns = ArithFeather.ArithSpawningKit.IndividualSpawns.IndividualSpawns.Instance;
+			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.DisablePlugin = false;
 			individualSpawns.OnSpawnPlayer += OnSpawnPlayer;
 		}
@@ -89,21 +85,14 @@ namespace ArithFeather.ScatteredSurvival
 		{
 			switch (ev.Key)
 			{
-				//           case "manual_end_only":
-				//               ev.Value = true;
-				//break;
-
 				case "scp079_disable":
 					ev.Value = true;
 					break;
 				case "smart_class_picker":
 					ev.Value = false;
 					break;
-				//case "team_respawn_queue":
-				//	if (useDefaultConfig) ev.Value = "30333033333033333033333";
-				//	break;
 				case "team_respawn_queue":
-					if (useDefaultConfig) ev.Value = "300333033333033333033333";
+					if (useDefaultConfig) ev.Value = "30333033333033333033333";
 					break;
 
 				case "disable_dropping_empty_boxes":
@@ -113,14 +102,6 @@ namespace ArithFeather.ScatteredSurvival
 				case "disable_decontamination":
 					ev.Value = true;
 					break;
-
-				//case "antifly_enable":
-				//    ev.Value = false;
-				//    break;
-
-				//case "anti_player_wallhack":
-				//    ev.Value = false;
-				//    break;
 
 				// Class Editing
 				case "default_item_scientist":
@@ -141,7 +122,7 @@ namespace ArithFeather.ScatteredSurvival
 								   "\n" +
 								   "Items will spawn randomly across the map.\n" +
 								   "You can not escape the facility. Decontamination and nuke are disabled.\n" +
-								   "Unless all 5 generators are active,dead SCP will respawn as SCP079 with 10x experience gain. SCP079 does not need to be killed to win.\n" +
+								   "Unless all 5 generators are active, dead SCP will respawn as SCP079 with 10x experience gain. SCP079 does not need to be killed to win.\n" +
 								   "SCP106 pelvis breaker no longer kills 106. Instead, it reduces their current HP by half.\n" +
 								   "--Rules--\n" +
 								   "1.Please don't group up with other teams.\n" +
@@ -158,9 +139,9 @@ namespace ArithFeather.ScatteredSurvival
 				{
 					PersonalBroadcast(ev.Player, 8,
 						$"<size={ServerInfoSize}><color={ServerInfoColor}>Welcome to <color={ServerHighLightColor}>Scattered Survival v{ModVersion}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.help</color>' for mod information!</color></size>");
-					PersonalBroadcast(ev.Player, 8,
-						$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
-					PersonalBroadcast(ev.Player, 8, "Nuke and escaping are disabled.");
+					//PersonalBroadcast(ev.Player, 8,
+					//	$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
+					PersonalBroadcast(ev.Player, 5, $"<size={ServerInfoSize}><color={ServerInfoColor}>Nuke and escaping are disabled.</color></size>");
 				}
 				catch
 				{
@@ -173,6 +154,9 @@ namespace ArithFeather.ScatteredSurvival
 		{
 			if (disablePlugin)
 			{
+				PluginManager.DisablePlugin(RandomItemSpawner.RandomItemSpawner.Instance);
+				PluginManager.DisablePlugin("ArithFeather.ArithSpawningKit");
+				PluginManager.DisablePlugin(PlayerLives.PlayerLives.Instance);
 				PluginManager.DisablePlugin(this);
 				return;
 			}
@@ -181,13 +165,13 @@ namespace ArithFeather.ScatteredSurvival
 			femurBroke = false;
 			roundStarted = false;
 			generatorsActivated = 0;
-			endGame = false;
+			Round.Stats.ScientistsEscaped = 1;
 		}
 
 		public void OnAssignTeam(PlayerInitialAssignTeamEvent ev)
 		{
 			var player = ev.Player;
-			var spawner = ArithSpawningKit.RandomPlayerSpawning.RandomPlayerSpawning.Instance;
+			var spawner = RandomPlayerSpawning.Instance;
 
 			if (ev.Team != Smod2.API.Team.SCP)
 			{
@@ -246,22 +230,16 @@ namespace ArithFeather.ScatteredSurvival
 			// Send broadcast for roles.
 			else if (ev.TeamRole.Role == Role.SCIENTIST)
 			{
-				PersonalBroadcast(player, 10, $"<size={ClassInfoSize}><color={ClassInfoColor}>Kill the SCP before your lives reach 0. Lives are shared. Escape is disabled.</color></size>");
+				PersonalBroadcast(player, 10, $"<size={ClassInfoSize}><color={ClassInfoColor}>Kill the SCP before your lives reach 0. Lives are shared.</color></size>");
+				PersonalBroadcast(player, 5, $"<size={ClassInfoSize}><color={ClassInfoColor}>Search for loot and allies.</color></size>");
 
 				if (roundStarted && cachedSpawnInfo != null && cachedSpawnInfo.PlayerID == ev.Player.PlayerId)
 				{
 					var itemSpawner = RandomItemSpawner.RandomItemSpawner.Instance.ItemSpawning;
 					itemSpawner.CheckSpawns();
 
-					var spawnLength = onSpawnItems.Length;
-					var itemTypes = new ItemType[spawnLength];
-
-					for (int i = 0; i < spawnLength; i++)
-					{
-						itemTypes[i] = ItemSpawning.GetRandomRarityItem((ItemRarity)onSpawnItems[i]);
-					}
-
-					itemSpawner.SpawnItems(itemTypes, cachedSpawnInfo.SpawnLocation.ZoneType, true);
+					itemSpawner.SpawnItems(1, cachedSpawnInfo.SpawnLocation.ZoneType, ItemType.ZONE_MANAGER_KEYCARD, true);
+					itemSpawner.SpawnItems(1, cachedSpawnInfo.SpawnLocation.ZoneType, UnityEngine.Random.Range(0f, 1f) > 0.5f ? ItemType.MEDKIT : ItemType.RADIO, true);
 				}
 			}
 		}
@@ -293,7 +271,7 @@ namespace ArithFeather.ScatteredSurvival
 
 		public void OnPlayerHurt(PlayerHurtEvent ev)
 		{
-			if (ev.Player.TeamRole.Role == Role.SCP_106 && ev.DamageType == DamageType.CONTAIN) ev.Damage = 0;
+			if (ev.DamageType == DamageType.RAGDOLLLESS && ev.Player.TeamRole.Role == Role.SCP_106) ev.Damage = 0;
 		}
 
 		public void OnChangeLever(WarheadChangeLeverEvent ev) => ev.Allow = false;
@@ -301,18 +279,20 @@ namespace ArithFeather.ScatteredSurvival
 		// Custom Event
 		private void OnSpawnPlayer(DeadPlayer deadPlayer)
 		{
-
-			var player = deadPlayer.Player;
-
-			if (deadPlayer.PreviousTeam == Smod2.API.Team.SCP && generatorsActivated != 5)
+			if (!PlayerLives.PlayerLives.Instance.GameHasEnded && deadPlayer.Player.TeamRole.Role != Role.SCP_049_2)
 			{
-				player.ChangeRole(Role.SCP_079);
-			}
-			else
-			{
-				RandomPlayerSpawning.Instance.UpdateFreeSpawns(1);
-				cachedSpawnInfo = RandomPlayerSpawning.Instance.MakePlayerNextSpawnRandom(player, Role.SCIENTIST);
-				player.ChangeRole(Role.SCIENTIST);
+				var player = deadPlayer.Player;
+
+				if (deadPlayer.PreviousTeam == Smod2.API.Team.SCP && generatorsActivated != 5)
+				{
+					player.ChangeRole(Role.SCP_079);
+				}
+				else
+				{
+					RandomPlayerSpawning.Instance.UpdateFreeSpawns(1);
+					cachedSpawnInfo = RandomPlayerSpawning.Instance.MakePlayerNextSpawnRandom(player, Role.SCIENTIST);
+					player.ChangeRole(Role.SCIENTIST);
+				}
 			}
 		}
 
