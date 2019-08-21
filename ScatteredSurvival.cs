@@ -12,6 +12,7 @@ using ArithFeather.ArithSpawningKit.RandomPlayerSpawning;
 using Smod2.EventHandlers;
 using ArithFeather.RandomItemSpawner;
 using UnityEngine.Networking.NetworkSystem;
+using GamemodeManager;
 
 namespace ArithFeather.ScatteredSurvival
 {
@@ -140,7 +141,7 @@ namespace ArithFeather.ScatteredSurvival
 					PersonalBroadcast(ev.Player, 8,
 						$"<size={ServerInfoSize}><color={ServerInfoColor}>Welcome to <color={ServerHighLightColor}>Scattered Survival v{ModVersion}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.help</color>' for mod information!</color></size>");
 					//PersonalBroadcast(ev.Player, 8,
-					//	$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
+						//$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
 					PersonalBroadcast(ev.Player, 5, $"<size={ServerInfoSize}><color={ServerInfoColor}>Nuke and escaping are disabled.</color></size>");
 				}
 				catch
@@ -222,7 +223,7 @@ namespace ArithFeather.ScatteredSurvival
 
 			var player = ev.Player;
 
-			if (ev.TeamRole.Team == Smod2.API.Team.SCP)
+			if (roundStarted && ev.TeamRole.Team == Smod2.API.Team.SCP)
 			{
 				PersonalBroadcast(player, 10,
 					$"<size={ClassInfoSize}><color={ClassInfoColor}>Kill the players <color={WinColor}>{PlayerLives.PlayerLives.Instance.LivesLeft}</color> times to win.</color></size>");

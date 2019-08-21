@@ -38,6 +38,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Packages\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="GamemodeManager">
+      <HintPath>..\Packages\GamemodeManager.dll</HintPath>
+    </Reference>
     <Reference Include="PlayerLives">
       <HintPath>..\PlayerLives\obj\Debug\PlayerLives.dll</HintPath>
     </Reference>
