@@ -140,8 +140,8 @@ namespace ArithFeather.ScatteredSurvival
 				{
 					PersonalBroadcast(ev.Player, 8,
 						$"<size={ServerInfoSize}><color={ServerInfoColor}>Welcome to <color={ServerHighLightColor}>Scattered Survival v{ModVersion}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.help</color>' for mod information!</color></size>");
-					//PersonalBroadcast(ev.Player, 8,
-						//$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
+					PersonalBroadcast(ev.Player, 8,
+						$"<size={ServerInfoSize}><color={ServerInfoColor}>If you like the plugin, join the discord for updates!\n <color={ServerHighLightColor}>https://discord.gg/DunUU82</color></color></size>");
 					PersonalBroadcast(ev.Player, 5, $"<size={ServerInfoSize}><color={ServerInfoColor}>Nuke and escaping are disabled.</color></size>");
 				}
 				catch
@@ -280,11 +280,11 @@ namespace ArithFeather.ScatteredSurvival
 		// Custom Event
 		private void OnSpawnPlayer(DeadPlayer deadPlayer)
 		{
-			if (!PlayerLives.PlayerLives.Instance.GameHasEnded && deadPlayer.Player.TeamRole.Role != Role.SCP_049_2)
+			if (!PlayerLives.PlayerLives.Instance.GameHasEnded)
 			{
 				var player = deadPlayer.Player;
 
-				if (deadPlayer.PreviousTeam == Smod2.API.Team.SCP && generatorsActivated != 5)
+				if (deadPlayer.PreviousTeamRole.Team == Smod2.API.Team.SCP && generatorsActivated != 5)
 				{
 					player.ChangeRole(Role.SCP_079);
 				}
