@@ -32,7 +32,7 @@ namespace ArithFeather.ScatteredSurvival
 		IEventHandlerCheckEscape, IEventHandlerRoundStart, IEventHandlerCallCommand, IEventHandler079AddExp,
 		IEventHandlerGeneratorFinish, IEventHandlerWarheadChangeLever, IEventHandlerPlayerDie
 	{
-		public const string ModVersion = "1.1";
+		public const string ModVersion = "1.2";
 
 		#region Const text values
 
