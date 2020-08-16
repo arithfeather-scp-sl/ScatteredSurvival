@@ -38,13 +38,18 @@ namespace ArithFeather.ScatteredSurvival {
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Enable();
 			individualSpawns.OnSpawnPlayer += IndividualSpawns_OnSpawnPlayer;
-			ServerEvents.RoundStarted += ServerEvents_RoundStarted;
+
 			SpawnerAPI.OnPlayerSpawningAtPoint += SpawnerAPI_OnPlayerSpawningAtPoint;
-			ServerEvents.WaitingForPlayers += ServerEvents_WaitingForPlayers;
+
+			var settings = new SpawnSettings();
+			settings.DefineSafeSpawnDistances(new DistanceCheckInfo(new []{ RoleType.ClassD }, Config.SafeTeamSpawnDistance, Config.SafeEnemySpawnDistance));
+			SpawnerAPI.ApplySettings(settings);
 
 			CustomItemSpawner.Spawning.EndlessSpawning.Enable();
 			CustomEnding.Instance.OnCheckEndGame += Instance_OnCheckEndGame;
 
+			ServerEvents.RoundStarted += ServerEvents_RoundStarted;
+			ServerEvents.WaitingForPlayers += ServerEvents_WaitingForPlayers;
 			PlayerEvents.Joined += PlayerEvents_Joined;
 			Exiled.Events.Handlers.Scp106.Containing += Scp106_Containing;
 			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
@@ -55,6 +60,7 @@ namespace ArithFeather.ScatteredSurvival {
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Disable();
 			individualSpawns.OnSpawnPlayer -= IndividualSpawns_OnSpawnPlayer;
+
 			ServerEvents.RoundStarted -= ServerEvents_RoundStarted;
 			ServerEvents.WaitingForPlayers -= ServerEvents_WaitingForPlayers;
 			SpawnerAPI.OnPlayerSpawningAtPoint -= SpawnerAPI_OnPlayerSpawningAtPoint;
@@ -79,7 +85,7 @@ namespace ArithFeather.ScatteredSurvival {
 			_initialSpawnsFinished = true;
 		}
 
-		private void Instance_OnCheckEndGame(RoundSummary.SumInfo_ClassList classList, AriToolKit.CustomEnding.EndGameInformation endGameInfo)
+		private void Instance_OnCheckEndGame(RoundSummary.SumInfo_ClassList classList, EndGameInformation endGameInfo)
 		{
 			if (endGameInfo.IsGameEnding) return;
 
@@ -90,6 +96,8 @@ namespace ArithFeather.ScatteredSurvival {
 		}
 
 		private void SpawnerAPI_OnPlayerSpawningAtPoint(PlayerSpawnPoint playerSpawnPoint) {
+			CustomItemSpawner.CustomItemSpawner.CheckRoomItemsSpawned(playerSpawnPoint.Room.Id);
+
 			if (!_initialSpawnsFinished) return;
 
 			switch (playerSpawnPoint.Room.Room.Zone)
