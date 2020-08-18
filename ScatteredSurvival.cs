@@ -54,6 +54,7 @@ namespace ArithFeather.ScatteredSurvival {
 			Exiled.Events.Handlers.Scp106.Containing += Scp106_Containing;
 			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting += Warhead_Starting;
+			Exiled.Events.Handlers.Scp914.Activating += Scp914_Activating;
 		}
 
 		public override void OnDisabled() {
@@ -72,10 +73,12 @@ namespace ArithFeather.ScatteredSurvival {
 			Exiled.Events.Handlers.Scp106.Containing -= Scp106_Containing;
 			ServerEvents.SendingConsoleCommand -= ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting -= Warhead_Starting;
+			Exiled.Events.Handlers.Scp914.Activating -= Scp914_Activating;
 
 			base.OnDisabled();
 		}
 
+		private void Scp914_Activating(Exiled.Events.EventArgs.ActivatingEventArgs ev) => ev.IsAllowed = false;
 		private void ServerEvents_RoundStarted() => Timing.RunCoroutine(WaitForSpawns());
 		private void ServerEvents_WaitingForPlayers() => _initialSpawnsFinished = false;
 
@@ -104,12 +107,12 @@ namespace ArithFeather.ScatteredSurvival {
 			{
 				case ZoneType.Entrance:
 
-					CustomItemSpawner.Spawning.EndlessSpawning.SpawnQueuedListInGroups("SafeEz", "rooms");
+					CustomItemSpawner.Spawning.EndlessSpawning.SpawnItemsInEndlessGroup("lczsafe");
 
 					break;
 				case ZoneType.LightContainment:
 
-					CustomItemSpawner.Spawning.EndlessSpawning.SpawnQueuedListInGroups("SafeLcz", "rooms");
+					CustomItemSpawner.Spawning.EndlessSpawning.SpawnItemsInEndlessGroup("entsafe");
 
 					break;
 			}
@@ -125,9 +128,11 @@ namespace ArithFeather.ScatteredSurvival {
 								   "Scientists will spawn randomly in Entrance and Light Containment Zone.\n" +
 								   "\n" +
 								   "SCP win if the player's lives reach 0. Lives are shared between everyone.\n" +
+								   "Players win by killing the SCP or activating all 5 generators.\n" +
 								   "\n" +
 								   "-Items will spawn randomly across the map.\n" +
 								   "-Decontamination and nuke are disabled.\n" +
+								   "-SCP914 is disabled.\n" +
 								   "-Unless all 5 generators are active, dead SCP will respawn as SCP079. SCP079 does not need to be killed to win.\n" +
 								   "-SCP106 pelvis breaker no longer kills 106. Instead, it reduces their current HP by half.\n";
 				ev.Allow = true;
