@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="DisableDecontaminationPatch.cs" />
+    <Compile Include="ForceConfigPatch.cs" />
     <Compile Include="ScatteredSurvival.cs" />
   </ItemGroup>
   <ItemGroup>

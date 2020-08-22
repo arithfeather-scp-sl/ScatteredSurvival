@@ -1,16 +1,14 @@
-﻿using System.Reflection;
-using HarmonyLib;
+﻿using HarmonyLib;
 using LightContainmentZoneDecontamination;
+using UnityEngine;
 
 namespace ArithFeather.ScatteredSurvival {
-	[HarmonyPatch(typeof(DecontaminationController), "Start")]
+	[HarmonyPatch(typeof(DecontaminationController), "Update")]
 	internal static class DisableDecontaminationPatch {
-		private static readonly FieldInfo DisableDecontamination =
-			typeof(DecontaminationController).GetField("_disableDecontamination",
-				BindingFlags.NonPublic | BindingFlags.Instance);
+		private static bool Prefix()
+		{
+			if (!ScatteredSurvival.Configs.IsEnabled) return true;
 
-		private static bool Prefix(DecontaminationController __Instance) {
-			DisableDecontamination.SetValue(__Instance, true);
 			return false;
 		}
 	}

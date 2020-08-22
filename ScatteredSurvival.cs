@@ -6,12 +6,16 @@ using ArithFeather.AriToolKit.IndividualSpawns;
 using ArithFeather.CustomPlayerSpawning;
 using Exiled.API.Enums;
 using Exiled.API.Features;
+using HarmonyLib;
 using MEC;
+using LeadingTeam = ArithFeather.AriToolKit.CustomEnding.LeadingTeam;
 using ServerEvents = Exiled.Events.Handlers.Server;
 using PlayerEvents = Exiled.Events.Handlers.Player;
 
 namespace ArithFeather.ScatteredSurvival {
-	public class ScatteredSurvival : Plugin<Config> {
+	public class ScatteredSurvival : Plugin<Config>
+	{
+		public static Config Configs;
 
 		#region Const text values
 
@@ -32,8 +36,14 @@ namespace ArithFeather.ScatteredSurvival {
 
 		public override Version Version => new Version("2.00");
 
+		private readonly Harmony _harmony = new Harmony("ScatteredSurvival");
+
+		private readonly List<int> deadScp = new List<int>();
+
 		public override void OnEnabled() {
 			base.OnEnabled();
+			Configs = Config;
+			_harmony.PatchAll();
 
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Enable();
@@ -51,6 +61,9 @@ namespace ArithFeather.ScatteredSurvival {
 			ServerEvents.RoundStarted += ServerEvents_RoundStarted;
 			ServerEvents.WaitingForPlayers += ServerEvents_WaitingForPlayers;
 			PlayerEvents.Joined += PlayerEvents_Joined;
+			PlayerEvents.Died += PlayerEvents_Died;
+			PlayerEvents.Left += PlayerEvents_Left;
+			PlayerEvents.InteractingElevator += PlayerEvents_InteractingElevator;
 			Exiled.Events.Handlers.Scp106.Containing += Scp106_Containing;
 			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting += Warhead_Starting;
@@ -70,6 +83,9 @@ namespace ArithFeather.ScatteredSurvival {
 			CustomEnding.Instance.OnCheckEndGame -= Instance_OnCheckEndGame;
 
 			PlayerEvents.Joined -= PlayerEvents_Joined;
+			PlayerEvents.Left -= PlayerEvents_Left;
+			PlayerEvents.Died -= PlayerEvents_Died;
+			PlayerEvents.InteractingElevator -= PlayerEvents_InteractingElevator;
 			Exiled.Events.Handlers.Scp106.Containing -= Scp106_Containing;
 			ServerEvents.SendingConsoleCommand -= ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting -= Warhead_Starting;
@@ -77,10 +93,24 @@ namespace ArithFeather.ScatteredSurvival {
 
 			base.OnDisabled();
 		}
+		private void PlayerEvents_InteractingElevator(Exiled.Events.EventArgs.InteractingElevatorEventArgs ev)
+		{
+			if (ev.Player.CurrentRoom.Type == RoomType.EzGateA || ev.Player.CurrentRoom.Type == RoomType.EzGateB)
+			{
+				ev.IsAllowed = false;
+			}
+		}
 
 		private void Scp914_Activating(Exiled.Events.EventArgs.ActivatingEventArgs ev) => ev.IsAllowed = false;
+
 		private void ServerEvents_RoundStarted() => Timing.RunCoroutine(WaitForSpawns());
-		private void ServerEvents_WaitingForPlayers() => _initialSpawnsFinished = false;
+
+		private void ServerEvents_WaitingForPlayers()
+		{
+			deadScp.Clear();
+			PlayerManager.localPlayer.GetComponent<CharacterClassManager>().Classes[(int)RoleType.Scp079].banClass = true;
+			_initialSpawnsFinished = false;
+		}
 
 		private IEnumerator<float> WaitForSpawns()
 		{
@@ -95,6 +125,7 @@ namespace ArithFeather.ScatteredSurvival {
 			if (Map.ActivatedGenerators == 5)
 			{
 				endGameInfo.WinningTeam = LeadingTeam.ChaosInsurgency;
+				endGameInfo.IsGameEnding = true;
 			}
 		}
 
@@ -118,8 +149,34 @@ namespace ArithFeather.ScatteredSurvival {
 			}
 		}
 
-		private void IndividualSpawns_OnSpawnPlayer(Player player) {
-			player.SetRole(RoleType.Scientist);
+		private void IndividualSpawns_OnSpawnPlayer(Player player)
+		{
+			var deadScpCount = deadScp.Count;
+			if (deadScpCount != 0)
+			{
+				for (int i = 0; i < deadScpCount; i++)
+				{
+					if (deadScp[i] == player.Id) {
+						player.SetRole(RoleType.Scp079);
+						deadScp.RemoveAt(i);
+						return;
+					}
+				}
+			}
+
+			player.SetRole(RoleType.ClassD);
+		}
+
+		private void PlayerEvents_Left(Exiled.Events.EventArgs.LeftEventArgs ev) {
+			var deadScpCount = deadScp.Count;
+			if (deadScpCount != 0) {
+				for (int i = 0; i < deadScpCount; i++) {
+					if (deadScp[i] == ev.Player.Id) {
+						deadScp.RemoveAt(i);
+						return;
+					}
+				}
+			}
 		}
 
 		private void ServerEvents_SendingConsoleCommand(Exiled.Events.EventArgs.SendingConsoleCommandEventArgs ev) {
@@ -171,5 +228,12 @@ namespace ArithFeather.ScatteredSurvival {
 		/// Disable Allowing Nuke
 		/// </summary>
 		private void Warhead_Starting(Exiled.Events.EventArgs.StartingEventArgs ev) => ev.IsAllowed = false;
+
+		private void PlayerEvents_Died(Exiled.Events.EventArgs.DiedEventArgs ev) {
+			var player = ev.Target;
+			if (player.Team == Team.SCP && player.Role != RoleType.Scp079) {
+				deadScp.Add(player.Id);
+			}
+		}
 	}
 }
