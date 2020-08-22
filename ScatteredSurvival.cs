@@ -43,7 +43,15 @@ namespace ArithFeather.ScatteredSurvival {
 		public override void OnEnabled() {
 			base.OnEnabled();
 			Configs = Config;
+
+			var settings = new SpawnSettings();
+			settings.DefineSafeSpawnDistances(new DistanceCheckInfo(new []{ RoleType.ClassD }, Config.SafeTeamSpawnDistance, Config.SafeEnemySpawnDistance));
+			SpawnerAPI.ApplySettings(settings);
+
 			_harmony.PatchAll();
+
+			CustomItemSpawner.Spawning.EndlessSpawning.Enable();
+			CustomEnding.Instance.OnCheckEndGame += Instance_OnCheckEndGame;
 
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Enable();
@@ -51,43 +59,40 @@ namespace ArithFeather.ScatteredSurvival {
 
 			SpawnerAPI.OnPlayerSpawningAtPoint += SpawnerAPI_OnPlayerSpawningAtPoint;
 
-			var settings = new SpawnSettings();
-			settings.DefineSafeSpawnDistances(new DistanceCheckInfo(new []{ RoleType.ClassD }, Config.SafeTeamSpawnDistance, Config.SafeEnemySpawnDistance));
-			SpawnerAPI.ApplySettings(settings);
-
-			CustomItemSpawner.Spawning.EndlessSpawning.Enable();
-			CustomEnding.Instance.OnCheckEndGame += Instance_OnCheckEndGame;
-
 			ServerEvents.RoundStarted += ServerEvents_RoundStarted;
 			ServerEvents.WaitingForPlayers += ServerEvents_WaitingForPlayers;
-			PlayerEvents.Joined += PlayerEvents_Joined;
+			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
+
 			PlayerEvents.Died += PlayerEvents_Died;
+			PlayerEvents.Joined += PlayerEvents_Joined;
 			PlayerEvents.Left += PlayerEvents_Left;
 			PlayerEvents.InteractingElevator += PlayerEvents_InteractingElevator;
+
 			Exiled.Events.Handlers.Scp106.Containing += Scp106_Containing;
-			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting += Warhead_Starting;
 			Exiled.Events.Handlers.Scp914.Activating += Scp914_Activating;
 		}
 
 		public override void OnDisabled() {
+			CustomItemSpawner.Spawning.EndlessSpawning.Disable();
+			CustomEnding.Instance.OnCheckEndGame -= Instance_OnCheckEndGame;
+
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Disable();
 			individualSpawns.OnSpawnPlayer -= IndividualSpawns_OnSpawnPlayer;
 
-			ServerEvents.RoundStarted -= ServerEvents_RoundStarted;
-			ServerEvents.WaitingForPlayers -= ServerEvents_WaitingForPlayers;
 			SpawnerAPI.OnPlayerSpawningAtPoint -= SpawnerAPI_OnPlayerSpawningAtPoint;
 
-			CustomItemSpawner.Spawning.EndlessSpawning.Disable();
-			CustomEnding.Instance.OnCheckEndGame -= Instance_OnCheckEndGame;
+			ServerEvents.RoundStarted -= ServerEvents_RoundStarted;
+			ServerEvents.WaitingForPlayers -= ServerEvents_WaitingForPlayers;
+			ServerEvents.SendingConsoleCommand -= ServerEvents_SendingConsoleCommand;
 
+			PlayerEvents.Died -= PlayerEvents_Died;
 			PlayerEvents.Joined -= PlayerEvents_Joined;
 			PlayerEvents.Left -= PlayerEvents_Left;
-			PlayerEvents.Died -= PlayerEvents_Died;
-			PlayerEvents.InteractingElevator -= PlayerEvents_InteractingElevator;
+			PlayerEvents.InteractingElevator += PlayerEvents_InteractingElevator;
+
 			Exiled.Events.Handlers.Scp106.Containing -= Scp106_Containing;
-			ServerEvents.SendingConsoleCommand -= ServerEvents_SendingConsoleCommand;
 			Exiled.Events.Handlers.Warhead.Starting -= Warhead_Starting;
 			Exiled.Events.Handlers.Scp914.Activating -= Scp914_Activating;
 
@@ -95,7 +100,8 @@ namespace ArithFeather.ScatteredSurvival {
 		}
 		private void PlayerEvents_InteractingElevator(Exiled.Events.EventArgs.InteractingElevatorEventArgs ev)
 		{
-			if (ev.Player.CurrentRoom.Type == RoomType.EzGateA || ev.Player.CurrentRoom.Type == RoomType.EzGateB)
+			var currentRoom = ev.Player.CurrentRoom.Type;
+			if (currentRoom == RoomType.EzGateA || currentRoom == RoomType.EzGateB)
 			{
 				ev.IsAllowed = false;
 			}
@@ -116,6 +122,7 @@ namespace ArithFeather.ScatteredSurvival {
 		{
 			yield return Timing.WaitForSeconds(0.5f);
 			_initialSpawnsFinished = true;
+			Map.Broadcast(8, "Players can also win by activating all 5 generators.");
 		}
 
 		private void Instance_OnCheckEndGame(RoundSummary.SumInfo_ClassList classList, EndGameInformation endGameInfo)
@@ -202,7 +209,7 @@ namespace ArithFeather.ScatteredSurvival {
 		private void PlayerEvents_Joined(Exiled.Events.EventArgs.JoinedEventArgs ev) {
 			if (Config.ShowGameStartMessage) {
 				ev.Player.Broadcast(8,
-					$"<size={ServerInfoSize}><color={ServerInfoColor}>Welcome to <color={ServerHighLightColor}>Scattered Survival v{Version}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.sshelp</color>' for mod information!</color></size>");
+					$"<size={ServerInfoSize}><color={ServerInfoColor}><color={ServerHighLightColor}>Scattered Survival Mode v{Version}!</color> Press ` to open the console and enter '<color={ServerHighLightColor}>.sshelp</color>' for mod information!</color></size>");
 			}
 		}
 
