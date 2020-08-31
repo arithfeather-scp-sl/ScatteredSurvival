@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ArithFeather.AriToolKit.CustomEnding;
 using ArithFeather.AriToolKit.IndividualSpawns;
 using ArithFeather.CustomPlayerSpawning;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using HarmonyLib;
 using MEC;
-using LeadingTeam = ArithFeather.AriToolKit.CustomEnding.LeadingTeam;
 using ServerEvents = Exiled.Events.Handlers.Server;
 using PlayerEvents = Exiled.Events.Handlers.Player;
 
@@ -34,7 +32,7 @@ namespace ArithFeather.ScatteredSurvival {
 
 		public override string Author => "Arith";
 
-		public override Version Version => new Version("2.00");
+		public override Version Version => new Version("2.01");
 
 		private readonly Harmony _harmony = new Harmony("ScatteredSurvival");
 
@@ -51,7 +49,6 @@ namespace ArithFeather.ScatteredSurvival {
 			_harmony.PatchAll();
 
 			CustomItemSpawner.Spawning.EndlessSpawning.Enable();
-			CustomEnding.Instance.OnCheckEndGame += Instance_OnCheckEndGame;
 
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Enable();
@@ -62,6 +59,7 @@ namespace ArithFeather.ScatteredSurvival {
 			ServerEvents.RoundStarted += ServerEvents_RoundStarted;
 			ServerEvents.WaitingForPlayers += ServerEvents_WaitingForPlayers;
 			ServerEvents.SendingConsoleCommand += ServerEvents_SendingConsoleCommand;
+			ServerEvents.EndingRound += ServerEvents_EndingRound;
 
 			PlayerEvents.Died += PlayerEvents_Died;
 			PlayerEvents.Joined += PlayerEvents_Joined;
@@ -75,7 +73,6 @@ namespace ArithFeather.ScatteredSurvival {
 
 		public override void OnDisabled() {
 			CustomItemSpawner.Spawning.EndlessSpawning.Disable();
-			CustomEnding.Instance.OnCheckEndGame -= Instance_OnCheckEndGame;
 
 			var individualSpawns = IndividualSpawns.Instance;
 			individualSpawns.Disable();
@@ -86,6 +83,7 @@ namespace ArithFeather.ScatteredSurvival {
 			ServerEvents.RoundStarted -= ServerEvents_RoundStarted;
 			ServerEvents.WaitingForPlayers -= ServerEvents_WaitingForPlayers;
 			ServerEvents.SendingConsoleCommand -= ServerEvents_SendingConsoleCommand;
+			ServerEvents.EndingRound -= ServerEvents_EndingRound;
 
 			PlayerEvents.Died -= PlayerEvents_Died;
 			PlayerEvents.Joined -= PlayerEvents_Joined;
@@ -125,14 +123,12 @@ namespace ArithFeather.ScatteredSurvival {
 			Map.Broadcast(8, "Players can also win by activating all 5 generators.");
 		}
 
-		private void Instance_OnCheckEndGame(RoundSummary.SumInfo_ClassList classList, EndGameInformation endGameInfo)
-		{
-			if (endGameInfo.IsGameEnding) return;
+		private void ServerEvents_EndingRound(Exiled.Events.EventArgs.EndingRoundEventArgs ev) {
+			if (ev.IsRoundEnded) return;
 
-			if (Map.ActivatedGenerators == 5)
-			{
-				endGameInfo.WinningTeam = LeadingTeam.ChaosInsurgency;
-				endGameInfo.IsGameEnding = true;
+			if (Map.ActivatedGenerators == 5) {
+				ev.LeadingTeam = LeadingTeam.ChaosInsurgency;
+				ev.IsRoundEnded = true;
 			}
 		}
 
