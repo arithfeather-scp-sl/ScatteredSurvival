@@ -32,7 +32,7 @@ namespace ArithFeather.ScatteredSurvival {
 
 		public override string Author => "Arith";
 
-		public override Version Version => new Version("2.01");
+		public override Version Version => new Version("2.02");
 
 		private readonly Harmony _harmony = new Harmony("ScatteredSurvival");
 
@@ -98,8 +98,7 @@ namespace ArithFeather.ScatteredSurvival {
 		}
 		private void PlayerEvents_InteractingElevator(Exiled.Events.EventArgs.InteractingElevatorEventArgs ev)
 		{
-			var currentRoom = ev.Player.CurrentRoom.Type;
-			if (currentRoom == RoomType.EzGateA || currentRoom == RoomType.EzGateB)
+			if (ev.Type == ElevatorType.GateA || ev.Type == ElevatorType.GateB)
 			{
 				ev.IsAllowed = false;
 			}
