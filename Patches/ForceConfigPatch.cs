@@ -1,9 +1,11 @@
 ﻿using System;
 using HarmonyLib;
 
-namespace ArithFeather.ScatteredSurvival {
+namespace ArithFeather.ScatteredSurvival.Patches
+{
 	[HarmonyPatch(typeof(YamlConfig), "GetString")]
-	internal static class ForceConfigPatch {
+	internal static class ForceConfigPatch
+	{
 
 		private static bool Prefix(ref string __result, string key, string def = "")
 		{

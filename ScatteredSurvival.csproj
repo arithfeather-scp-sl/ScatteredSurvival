@@ -55,9 +55,6 @@
     </Reference>
     <Reference Include="Mirror" HintPath="$(SCPSL)\Mirror.dll" Private="false" />
     <Reference Include="NorthwoodLib" HintPath="$(SCPSL)\NorthwoodLib.dll" Private="false" />
-    <Reference Include="Smod2">
-      <HintPath>..\Smod2\Smod2\bin\Debug\net472\Smod2.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation" />
     <Reference Include="UnityEngine" HintPath="$(UNITY)\UnityEngine.dll" Private="false" />
@@ -66,18 +63,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="DisableDecontaminationPatch.cs" />
-    <Compile Include="ForceConfigPatch.cs" />
+    <Compile Include="Patches\DisableDecontaminationPatch.cs" />
+    <Compile Include="Patches\ForceConfigPatch.cs" />
+    <Compile Include="Patches\AllowTeamSpawnPatch.cs" />
+    <Compile Include="IndividualSpawns.cs" />
+    <Compile Include="PlayerLives.cs" />
     <Compile Include="ScatteredSurvival.cs" />
+    <Compile Include="SpookyLights.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AriToolKit\AriToolKit.csproj">
-      <Project>{17927087-C610-457D-89CE-DEE4816DA2FF}</Project>
-      <Name>AriToolKit</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CustomItemSpawner\CustomItemSpawner.csproj">
       <Project>{888dd295-c35d-468a-addf-0524c85aacb0}</Project>
       <Name>CustomItemSpawner</Name>
